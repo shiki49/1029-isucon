@@ -722,6 +722,7 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	//use pprof
 	cpuprofile := "isucon.prof"
 	f, err := os.Create(cpuprofile)
 	if err != nil {
