@@ -307,22 +307,22 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 		checkErr(err)
 	}
 
-	// rows, err := db.Query(`SELECT * FROM entries WHERE user_id = ? ORDER BY created_at LIMIT 5`, user.ID)
-	rows, err := db.Query(`SELECT id, SUBSTRING_INDEX(body, '\n', 1) AS title FROM entries WHERE user_id = ? ORDER BY created_at LIMIT 5`, user.ID)
+	rows, err := db.Query(`SELECT * FROM entries WHERE user_id = ? ORDER BY created_at LIMIT 5`, user.ID)
+	// rows, err := db.Query(`SELECT id, SUBSTRING_INDEX(body, '\n', 1) AS title FROM entries WHERE user_id = ? ORDER BY created_at LIMIT 5`, user.ID)
 	if err != sql.ErrNoRows {
 		checkErr(err)
 	}
 	entries := make([]Entry, 0, 5)
 	for rows.Next() {
-		var title string
-		var id int
-		checkErr(row.Scan(&id, &title))
-		entries = append(entries, Entry{id, 1, true, title, "content", time.Now()})
-		// var id, userID, private int
-		// var body string
-		// var createdAt time.Time
-		// checkErr(rows.Scan(&id, &userID, &private, &body, &createdAt))
-		// entries = append(entries, Entry{id, userID, private == 1, strings.SplitN(body, "\n", 2)[0], strings.SplitN(body, "\n", 2)[1], createdAt})
+		// var title string
+		// var id int
+		// checkErr(row.Scan(&id, &title))
+		// entries = append(entries, Entry{id, 1, true, title, "content", time.Now()})
+		var id, userID, private int
+		var body string
+		var createdAt time.Time
+		checkErr(rows.Scan(&id, &userID, &private, &body, &createdAt))
+		entries = append(entries, Entry{id, userID, private == 1, strings.SplitN(body, "\n", 2)[0], strings.SplitN(body, "\n", 2)[1], createdAt})
 	}
 	rows.Close()
 
