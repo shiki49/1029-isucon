@@ -308,7 +308,7 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// rows, err := db.Query(`SELECT * FROM entries WHERE user_id = ? ORDER BY created_at LIMIT 5`, user.ID)
-	rows, err := db.Query(`SELECT id, SUBSTRING_INDEX(body, "\n", 1) AS title FROM entries WHERE user_id = ? ORDER BY created_at LIMIT 5`, user.ID)
+	rows, err := db.Query(`SELECT id, SUBSTRING_INDEX(body, '\n', 1) AS title FROM entries WHERE user_id = ? ORDER BY created_at LIMIT 5`, user.ID)
 	if err != sql.ErrNoRows {
 		checkErr(err)
 	}
