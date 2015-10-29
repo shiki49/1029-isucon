@@ -6,7 +6,6 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/boj/redistore"
 	"github.com/garyburd/redigo/redis"
 	"github.com/go-sql-driver/mysql"
