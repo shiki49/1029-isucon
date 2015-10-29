@@ -10,6 +10,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"path"
 	"runtime"
@@ -781,6 +782,9 @@ func main() {
 	r.HandleFunc("/", myHandler(GetIndex))
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("../static")))
 	log.Fatal(http.ListenAndServe(":8080", r))
+	go func() {
+		log.Println(http.ListenAndServe(":6060", nil))
+	}()
 }
 
 func checkErr(err error) {
