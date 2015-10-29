@@ -721,9 +721,6 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// go func() {
-	// 	log.Println(http.ListenAndServe(":6060", nil))
-	// }()
 	host := os.Getenv("ISUCON5_DB_HOST")
 	if host == "" {
 		host = "localhost"
@@ -760,7 +757,8 @@ func main() {
 
 	r := mux.NewRouter()
 
-	attatchProfiler(r)
+	//attatchProfiler(r)
+	r.PathPrefix("/debug/").Handler(http.DefaultServeMux)
 
 	l := r.Path("/login").Subrouter()
 	l.Methods("GET").HandlerFunc(myHandler(GetLogin))
