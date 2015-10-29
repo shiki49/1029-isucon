@@ -774,7 +774,7 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 	db.Exec("DELETE FROM comments WHERE id > 1500000")
 
 	//var fp *os.File
-	fp, err := os.Open("/home/isucon/isucon5-qualifier/rel.tsv")
+	fp, err := os.Open("rel.tsv")
 	if err != nil {
 		checkErr(err)
 	}
