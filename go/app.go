@@ -741,7 +741,7 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 	reader.Comma = '\t'
 	reader.LazyQuotes = true
 
-	redisFriendsMap := make(map[int][]Relation)
+	redisFriendsMap := make(map[int]map[int]time.Time)
 
 	for {
 		record, err := reader.Read()
@@ -757,15 +757,14 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 		id1, _ := strconv.Atoi(record[1])
 
 		if _, exist := redisFriendsMap[id0]; !exist {
-			redisFriendsMap[id0] = []Relation{}
+			redisFriendsMap[id0] = make(map[int]time.Time)
 		}
-		redisFriendsMap[id0] = append(redisFriendsMap[id0], Relation{id1, t})
+		redisFriendsMap[id0][id1] = t
 
 		if _, exist := redisFriendsMap[id1]; !exist {
-			redisFriendsMap[id1] = []Relation{}
+			redisFriendsMap[id1] = make(map[int]time.Time)
 		}
-		redisFriendsMap[id1] = append(redisFriendsMap[id1], Relation{id0, t})
-
+		redisFriendsMap[id1][id0] = t
 	}
 
 	//redis
