@@ -1,14 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/csv"
+	"encoding/gob"
 	"errors"
 	"github.com/boj/redistore"
+	"github.com/garyburd/redigo/redis"
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -24,6 +29,7 @@ import (
 var (
 	db    *sql.DB
 	store *redistore.RediStore
+	conn  *redis.Conn
 )
 
 type User struct {
@@ -72,6 +78,15 @@ type Footprint struct {
 	Updated   time.Time
 }
 
+type Relation struct {
+	FriendID  int
+	CreatedAt time.Time
+}
+
+type Relations struct {
+	relations []Relation
+}
+
 var prefs = []string{"未入力",
 	"北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県", "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県", "新潟県", "富山県",
 	"石川県", "福井県", "山梨県", "長野県", "岐阜県", "静岡県", "愛知県", "三重県", "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県", "鳥取県", "島根県",
@@ -82,6 +97,47 @@ var (
 	ErrPermissionDenied = errors.New("Permission denied.")
 	ErrContentNotFound  = errors.New("Content not found.")
 )
+
+func (data *Relation) GobEncode() ([]byte, error) {
+	w := new(bytes.Buffer)
+	encoder := gob.NewEncoder(w)
+	err := encoder.Encode(data.FriendID)
+	if err != nil {
+		return nil, err
+	}
+	err = encoder.Encode(data.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return w.Bytes(), nil
+}
+
+func (data *Relation) GobDecode(buf []byte) error {
+	r := bytes.NewBuffer(buf)
+	decoder := gob.NewDecoder(r)
+	err := decoder.Decode(&data.FriendID)
+	if err != nil {
+		return err
+	}
+	return decoder.Decode(&data.CreatedAt)
+}
+
+func (datum *Relations) GobEncode() ([]byte, error) {
+	w := new(bytes.Buffer)
+	encoder := gob.NewEncoder(w)
+	err := encoder.Encode(datum)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.Bytes(), nil
+}
+
+func (datum *Relations) GobDecode(buf []byte) error {
+	r := bytes.NewBuffer(buf)
+	decoder := gob.NewDecoder(r)
+	return decoder.Decode(&datum)
+}
 
 func authenticate(w http.ResponseWriter, r *http.Request, email, passwd string) {
 	query := `SELECT u.id AS id, u.account_name AS account_name, u.nick_name AS nick_name, u.email AS email
@@ -719,6 +775,66 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 	db.Exec("DELETE FROM footprints WHERE id > 500000")
 	db.Exec("DELETE FROM entries WHERE id > 500000")
 	db.Exec("DELETE FROM comments WHERE id > 1500000")
+
+	//var fp *os.File
+	fp, err := os.Open("/home/isucon/isucon5-qualifier/rel.tsv")
+	if err != nil {
+		checkErr(err)
+	}
+	defer fp.Close()
+
+	reader := csv.NewReader(fp)
+	reader.Comma = '\t'
+	reader.LazyQuotes = true
+
+	redisFriendsMap := make(map[int]Relations)
+
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			checkErr(err)
+		}
+
+		t, _ := time.Parse("2006-01-02 15:04:05", record[2])
+
+		id0, _ := strconv.Atoi(record[0])
+		id1, _ := strconv.Atoi(record[1])
+
+		// entry := Entry{id, userID, private == 1, strings.SplitN(body, "\n", 2)[0], strings.SplitN(body, "\n", 2)[1], createdAt}
+
+		if _, exist := redisFriendsMap[id0]; !exist {
+			redisFriendsMap[id0] = new(Relations)
+		}
+		redisFriendsMap[id0] = append(redisFriendsMap[id0], Relation{id0, t})
+
+		if _, exist := redisFriendsMap[id1]; !exist {
+			redisFriendsMap[id1] = new(Relations)
+		}
+		redisFriendsMap[id1] = append(redisFriendsMap[id1], Relation{id1, t})
+
+		// if _, exist := redisFriendsMap[id1]; !exist {
+		// 	redisFriendsMap[id1] = make(map[int]Relation)
+		// }
+		// redisFriendsMap[id1][id0] = t
+	}
+
+	//redis
+	conn, err := redis.Dial("tcp", ":6379")
+	if err != nil {
+		checkErr(err)
+	}
+	defer conn.Close()
+
+	conn.Flush()
+
+	for id0, arr := range redisFriendsMap {
+		for id1, time := range arr {
+
+		}
+	}
+
 }
 
 func main() {
