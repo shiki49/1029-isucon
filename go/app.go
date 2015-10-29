@@ -29,7 +29,7 @@ import (
 var (
 	db    *sql.DB
 	store *redistore.RediStore
-	conn  *redis.Conn
+	conn  redis.Conn
 )
 
 type User struct {
@@ -169,11 +169,24 @@ func getUserFromAccount(w http.ResponseWriter, name string) *User {
 func isFriend(w http.ResponseWriter, r *http.Request, anotherID int) bool {
 	session := getSession(w, r)
 	id := session.Values["user_id"]
-	row := db.QueryRow(`SELECT COUNT(1) AS cnt FROM relations WHERE (one = ? AND another = ?) OR (one = ? AND another = ?)`, id, anotherID, anotherID, id)
-	cnt := new(int)
-	err := row.Scan(cnt)
-	checkErr(err)
-	return *cnt > 0
+
+	strJSON, err := redis.String(conn.Do("GET", id))
+	if err != nil {
+		checkErr(err)
+	}
+
+	byteJSON := []byte(strJSON)
+	var friendmap map[string]time.Time
+	err = json.Unmarshal(byteJSON, &friendmap)
+	_, exist := friendmap[strconv.Itoa(anotherID)]
+
+	return exist
+
+	// row := db.QueryRow(`SELECT COUNT(1) AS cnt FROM relations WHERE (one = ? AND another = ?) OR (one = ? AND another = ?)`, id, anotherID, anotherID, id)
+	// cnt := new(int)
+	// err := row.Scan(cnt)
+	// checkErr(err)
+	//return *cnt > 0
 }
 
 func isFriendAccount(w http.ResponseWriter, r *http.Request, name string) bool {
@@ -768,7 +781,7 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//redis
-	conn, err := redis.Dial("tcp", ":6379")
+	conn, err = redis.Dial("tcp", ":6379")
 	if err != nil {
 		checkErr(err)
 	}
