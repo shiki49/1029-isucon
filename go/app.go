@@ -780,13 +780,6 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 		redisFriendsMap[id1][id0] = t
 	}
 
-	//redis
-	conn, err = redis.Dial("tcp", ":6379")
-	if err != nil {
-		checkErr(err)
-	}
-	defer conn.Close()
-
 	conn.Flush()
 
 	for id0, arr := range redisFriendsMap {
@@ -853,6 +846,13 @@ func main() {
 	defer db.Close()
 
 	// store = sessions.NewCookieStore([]byte(ssecret))
+
+	//redis
+	conn, err = redis.Dial("tcp", ":6379")
+	if err != nil {
+		checkErr(err)
+	}
+	defer conn.Close()
 
 	//use redis store
 	store, err = redistore.NewRediStore(10, "tcp", host+":6379", "", []byte("isucon5q-secret"))
