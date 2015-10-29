@@ -94,47 +94,6 @@ var (
 	ErrContentNotFound  = errors.New("Content not found.")
 )
 
-// func (data *Relation) GobEncode() ([]byte, error) {
-// 	w := new(bytes.Buffer)
-// 	encoder := gob.NewEncoder(w)
-// 	err := encoder.Encode(data.FriendID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	err = encoder.Encode(data.CreatedAt)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return w.Bytes(), nil
-// }
-
-// func (data *Relation) GobDecode(buf []byte) error {
-// 	r := bytes.NewBuffer(buf)
-// 	decoder := gob.NewDecoder(r)
-// 	err := decoder.Decode(&data.FriendID)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return decoder.Decode(&data.CreatedAt)
-// }
-
-// func (datum *Relations) GobEncode() ([]byte, error) {
-// 	w := new(bytes.Buffer)
-// 	encoder := gob.NewEncoder(w)
-// 	err := encoder.Encode(datum)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return w.Bytes(), nil
-// }
-
-// func (datum *Relations) GobDecode(buf []byte) error {
-// 	r := bytes.NewBuffer(buf)
-// 	decoder := gob.NewDecoder(r)
-// 	return decoder.Decode(&datum)
-// }
-
 func authenticate(w http.ResponseWriter, r *http.Request, email, passwd string) {
 	query := `SELECT u.id AS id, u.account_name AS account_name, u.nick_name AS nick_name, u.email AS email
 FROM users u
@@ -772,7 +731,6 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 	db.Exec("DELETE FROM entries WHERE id > 500000")
 	db.Exec("DELETE FROM comments WHERE id > 1500000")
 
-	//var fp *os.File
 	fp, err := os.Open("rel.tsv")
 	if err != nil {
 		checkErr(err)
@@ -798,8 +756,6 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 		id0, _ := strconv.Atoi(record[0])
 		id1, _ := strconv.Atoi(record[1])
 
-		// entry := Entry{id, userID, private == 1, strings.SplitN(body, "\n", 2)[0], strings.SplitN(body, "\n", 2)[1], createdAt}
-
 		if _, exist := redisFriendsMap[id0]; !exist {
 			redisFriendsMap[id0] = []Relation{}
 		}
@@ -810,10 +766,6 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 		}
 		redisFriendsMap[id1] = append(redisFriendsMap[id1], Relation{id0, t})
 
-		// if _, exist := redisFriendsMap[id1]; !exist {
-		// 	redisFriendsMap[id1] = make(map[int]Relation)
-		// }
-		// redisFriendsMap[id1][id0] = t
 	}
 
 	//redis
