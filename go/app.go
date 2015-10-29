@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"errors"
+	"github.com/boj/redistore"
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
@@ -22,7 +23,7 @@ import (
 
 var (
 	db    *sql.DB
-	store *sessions.CookieStore
+	store *redistore.RediStore
 )
 
 type User struct {
@@ -774,7 +775,14 @@ func main() {
 	}
 	defer db.Close()
 
-	store = sessions.NewCookieStore([]byte(ssecret))
+	// store = sessions.NewCookieStore([]byte(ssecret))
+
+	//use redis store
+	store, err = redistore.NewRediStore(10, "tcp", host+":6379", "", []byte("isucon5q-secret"))
+	if err != nil {
+		log.Fatalf("Failed to connect to redis")
+	}
+	defer store.Close()
 
 	r := mux.NewRouter()
 
