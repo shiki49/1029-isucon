@@ -831,9 +831,7 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			checkErr(err)
 		}
-		fmt.Println(id0)
-		fmt.Println(string(json))
-		os.Exit(0)
+		conn.Do("SET", id0, string(json))
 	}
 
 }
