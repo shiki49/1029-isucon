@@ -10,10 +10,11 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"net/http/pprof"
 	"os"
+	"os/signal"
 	"path"
 	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 	"time"
@@ -721,6 +722,25 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	cpuprofile := "isucon.prof"
+	f, err := os.Create(cpuprofile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	pprof.StartCPUProfile(f)
+
+	defer pprof.StopCPUProfile()
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for sig := range c {
+			log.Printf("captured %v, stopping profiler and exiting...", sig)
+			pprof.StopCPUProfile()
+			os.Exit(1)
+		}
+	}()
+
 	host := os.Getenv("ISUCON5_DB_HOST")
 	if host == "" {
 		host = "localhost"
@@ -795,8 +815,8 @@ func checkErr(err error) {
 }
 
 func attatchProfiler(router *mux.Router) {
-	router.HandleFunc("/debug/pprof/", pprof.Index)
-	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	// router.HandleFunc("/debug/pprof/", pprof.Index)
+	// router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	// router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	// router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 }
