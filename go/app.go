@@ -316,7 +316,7 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var title string
 		var id int
-		checkErr(row.Scan(&id, &title))
+		checkErr(rows.Scan(&id, &title))
 		entries = append(entries, Entry{id, 1, true, title, "content", time.Now()})
 		// var id, userID, private int
 		// var body string
