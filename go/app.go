@@ -760,35 +760,33 @@ func main() {
 
 	r := mux.NewRouter()
 
-	// l := r.Path("/login").Subrouter()
-	// l.Methods("GET").HandlerFunc(myHandler(GetLogin))
-	// l.Methods("POST").HandlerFunc(myHandler(PostLogin))
-	// r.Path("/logout").Methods("GET").HandlerFunc(myHandler(GetLogout))
+	attatchProfiler(r)
 
-	// p := r.Path("/profile/{account_name}").Subrouter()
-	// p.Methods("GET").HandlerFunc(myHandler(GetProfile))
-	// p.Methods("POST").HandlerFunc(myHandler(PostProfile))
+	l := r.Path("/login").Subrouter()
+	l.Methods("GET").HandlerFunc(myHandler(GetLogin))
+	l.Methods("POST").HandlerFunc(myHandler(PostLogin))
+	r.Path("/logout").Methods("GET").HandlerFunc(myHandler(GetLogout))
 
-	// d := r.PathPrefix("/diary").Subrouter()
-	// d.HandleFunc("/entries/{account_name}", myHandler(ListEntries)).Methods("GET")
-	// d.HandleFunc("/entry", myHandler(PostEntry)).Methods("POST")
-	// d.HandleFunc("/entry/{entry_id}", myHandler(GetEntry)).Methods("GET")
+	p := r.Path("/profile/{account_name}").Subrouter()
+	p.Methods("GET").HandlerFunc(myHandler(GetProfile))
+	p.Methods("POST").HandlerFunc(myHandler(PostProfile))
 
-	// d.HandleFunc("/comment/{entry_id}", myHandler(PostComment)).Methods("POST")
+	d := r.PathPrefix("/diary").Subrouter()
+	d.HandleFunc("/entries/{account_name}", myHandler(ListEntries)).Methods("GET")
+	d.HandleFunc("/entry", myHandler(PostEntry)).Methods("POST")
+	d.HandleFunc("/entry/{entry_id}", myHandler(GetEntry)).Methods("GET")
 
-	// r.HandleFunc("/footprints", myHandler(GetFootprints)).Methods("GET")
+	d.HandleFunc("/comment/{entry_id}", myHandler(PostComment)).Methods("POST")
 
-	// r.HandleFunc("/friends", myHandler(GetFriends)).Methods("GET")
-	// r.HandleFunc("/friends/{account_name}", myHandler(PostFriends)).Methods("POST")
+	r.HandleFunc("/footprints", myHandler(GetFootprints)).Methods("GET")
 
-	// r.HandleFunc("/initialize", myHandler(GetInitialize))
-	// r.HandleFunc("/", myHandler(GetIndex))
-	// r.PathPrefix("/").Handler(http.FileServer(http.Dir("../static")))
+	r.HandleFunc("/friends", myHandler(GetFriends)).Methods("GET")
+	r.HandleFunc("/friends/{account_name}", myHandler(PostFriends)).Methods("POST")
 
-	r.HandleFunc("/debug/pprof/", pprof.Index)
-	r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	r.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	r.HandleFunc("/initialize", myHandler(GetInitialize))
+	r.HandleFunc("/", myHandler(GetIndex))
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("../static")))
+
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
@@ -796,4 +794,11 @@ func checkErr(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func attatchProfiler(router *mux.Router) {
+	router.HandleFunc("/debug/pprof/", pprof.Index)
+	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 }
