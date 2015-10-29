@@ -1,11 +1,12 @@
 package main
 
 import (
-	"bytes"
+	//"bytes"
 	"database/sql"
 	"encoding/csv"
-	"encoding/gob"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/boj/redistore"
 	"github.com/garyburd/redigo/redis"
 	"github.com/go-sql-driver/mysql"
@@ -83,10 +84,6 @@ type Relation struct {
 	CreatedAt time.Time
 }
 
-type Relations struct {
-	relations []Relation
-}
-
 var prefs = []string{"未入力",
 	"北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県", "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県", "新潟県", "富山県",
 	"石川県", "福井県", "山梨県", "長野県", "岐阜県", "静岡県", "愛知県", "三重県", "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県", "鳥取県", "島根県",
@@ -98,46 +95,46 @@ var (
 	ErrContentNotFound  = errors.New("Content not found.")
 )
 
-func (data *Relation) GobEncode() ([]byte, error) {
-	w := new(bytes.Buffer)
-	encoder := gob.NewEncoder(w)
-	err := encoder.Encode(data.FriendID)
-	if err != nil {
-		return nil, err
-	}
-	err = encoder.Encode(data.CreatedAt)
-	if err != nil {
-		return nil, err
-	}
-	return w.Bytes(), nil
-}
+// func (data *Relation) GobEncode() ([]byte, error) {
+// 	w := new(bytes.Buffer)
+// 	encoder := gob.NewEncoder(w)
+// 	err := encoder.Encode(data.FriendID)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	err = encoder.Encode(data.CreatedAt)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return w.Bytes(), nil
+// }
 
-func (data *Relation) GobDecode(buf []byte) error {
-	r := bytes.NewBuffer(buf)
-	decoder := gob.NewDecoder(r)
-	err := decoder.Decode(&data.FriendID)
-	if err != nil {
-		return err
-	}
-	return decoder.Decode(&data.CreatedAt)
-}
+// func (data *Relation) GobDecode(buf []byte) error {
+// 	r := bytes.NewBuffer(buf)
+// 	decoder := gob.NewDecoder(r)
+// 	err := decoder.Decode(&data.FriendID)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return decoder.Decode(&data.CreatedAt)
+// }
 
-func (datum *Relations) GobEncode() ([]byte, error) {
-	w := new(bytes.Buffer)
-	encoder := gob.NewEncoder(w)
-	err := encoder.Encode(datum)
-	if err != nil {
-		return nil, err
-	}
+// func (datum *Relations) GobEncode() ([]byte, error) {
+// 	w := new(bytes.Buffer)
+// 	encoder := gob.NewEncoder(w)
+// 	err := encoder.Encode(datum)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return w.Bytes(), nil
-}
+// 	return w.Bytes(), nil
+// }
 
-func (datum *Relations) GobDecode(buf []byte) error {
-	r := bytes.NewBuffer(buf)
-	decoder := gob.NewDecoder(r)
-	return decoder.Decode(&datum)
-}
+// func (datum *Relations) GobDecode(buf []byte) error {
+// 	r := bytes.NewBuffer(buf)
+// 	decoder := gob.NewDecoder(r)
+// 	return decoder.Decode(&datum)
+// }
 
 func authenticate(w http.ResponseWriter, r *http.Request, email, passwd string) {
 	query := `SELECT u.id AS id, u.account_name AS account_name, u.nick_name AS nick_name, u.email AS email
@@ -787,7 +784,7 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 	reader.Comma = '\t'
 	reader.LazyQuotes = true
 
-	redisFriendsMap := make(map[int]Relations)
+	redisFriendsMap := make(map[int][]Relation)
 
 	for {
 		record, err := reader.Read()
@@ -805,12 +802,12 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 		// entry := Entry{id, userID, private == 1, strings.SplitN(body, "\n", 2)[0], strings.SplitN(body, "\n", 2)[1], createdAt}
 
 		if _, exist := redisFriendsMap[id0]; !exist {
-			redisFriendsMap[id0] = new(Relations)
+			redisFriendsMap[id0] = []Relation{}
 		}
 		redisFriendsMap[id0] = append(redisFriendsMap[id0], Relation{id0, t})
 
 		if _, exist := redisFriendsMap[id1]; !exist {
-			redisFriendsMap[id1] = new(Relations)
+			redisFriendsMap[id1] = []Relation{}
 		}
 		redisFriendsMap[id1] = append(redisFriendsMap[id1], Relation{id1, t})
 
@@ -830,9 +827,13 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 	conn.Flush()
 
 	for id0, arr := range redisFriendsMap {
-		for id1, time := range arr {
-
+		json, err := json.Marshal(arr)
+		if err != nil {
+			checkErr(err)
 		}
+		fmt.Println(id0)
+		fmt.Println(string(json))
+		os.Exit(0)
 	}
 
 }
