@@ -698,31 +698,26 @@ func GetFriends(w http.ResponseWriter, r *http.Request) {
 
 	arr, err := redis.Values(conn.Do("HGETALL", user.ID))
 
+	index := 0
+	var friendID int
+	var t time.Time
+
 	friendsMap := make(map[int]time.Time)
-	for rowFriendID, rowTime := range arr {
-		strFriendID, _ := redis.String(rowFriendID, err)
-		strTime, _ := redis.String(rowTime, err)
+	for _, v := range arr {
+		m := index % 2
 
-		t, _ := time.Parse("2006-01-02 15:04:05", strTime)
-		friendID, _ := strconv.Atoi(strFriendID)
+		if m == 0 {
+			strFriendID, _ := redis.String(v, err)
+			friendID, _ = strconv.Atoi(strFriendID)
+		} else {
+			fmt.Println(v)
+			strTime, _ := redis.String(v, err)
+			fmt.Println(strTime)
+			t, _ = time.Parse("2006-01-02 15:04:05 -0700 MST", strTime)
 
-		friendsMap[friendID] = t
+			friendsMap[friendID] = t
+		}
 	}
-
-	// strJSON, err := redis.String(conn.Do("get", user.ID))
-	// if err != nil {
-	// 	checkErr(err)
-	// }
-
-	// byteJSON := []byte(strJSON)
-	// var tmpFriendmap map[string]time.Time
-	// friendsMap := make(map[int]time.Time)
-	// err = json.Unmarshal(byteJSON, &tmpFriendmap)
-
-	// for k, v := range tmpFriendmap {
-	// 	id, _ := strconv.Atoi(k)
-	// 	friendsMap[id] = v
-	// }
 
 	friends := make([]Friend, 0, len(friendsMap))
 	for key, val := range friendsMap {
