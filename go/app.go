@@ -181,12 +181,6 @@ func isFriend(w http.ResponseWriter, r *http.Request, anotherID int) bool {
 	_, exist := friendmap[strconv.Itoa(anotherID)]
 
 	return exist
-
-	// row := db.QueryRow(`SELECT COUNT(1) AS cnt FROM relations WHERE (one = ? AND another = ?) OR (one = ? AND another = ?)`, id, anotherID, anotherID, id)
-	// cnt := new(int)
-	// err := row.Scan(cnt)
-	// checkErr(err)
-	//return *cnt > 0
 }
 
 func isFriendAccount(w http.ResponseWriter, r *http.Request, name string) bool {
@@ -696,26 +690,42 @@ func GetFriends(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := getCurrentUser(w, r)
-	rows, err := db.Query(`SELECT * FROM relations WHERE one = ? OR another = ? ORDER BY created_at DESC`, user.ID, user.ID)
-	if err != sql.ErrNoRows {
+
+	strJSON, err := redis.String(conn.Do("get", user.ID))
+	if err != nil {
 		checkErr(err)
 	}
+
+	byteJSON := []byte(strJSON)
+	var tmpFriendmap map[string]time.Time
 	friendsMap := make(map[int]time.Time)
-	for rows.Next() {
-		var id, one, another int
-		var createdAt time.Time
-		checkErr(rows.Scan(&id, &one, &another, &createdAt))
-		var friendID int
-		if one == user.ID {
-			friendID = another
-		} else {
-			friendID = one
-		}
-		if _, ok := friendsMap[friendID]; !ok {
-			friendsMap[friendID] = createdAt
-		}
+	err = json.Unmarshal(byteJSON, &tmpFriendmap)
+
+	for k, v := range tmpFriendmap {
+		id, _ := strconv.Atoi(k)
+		friendsMap[id] = v
 	}
-	rows.Close()
+
+	// rows, err := db.Query(`SELECT * FROM relations WHERE one = ? OR another = ? ORDER BY created_at DESC`, user.ID, user.ID)
+	// if err != sql.ErrNoRows {
+	// 	checkErr(err)
+	// }
+	// friendsMap := make(map[int]time.Time)
+	// for rows.Next() {
+	// 	var id, one, another int
+	// 	var createdAt time.Time
+	// 	checkErr(rows.Scan(&id, &one, &another, &createdAt))
+	// 	var friendID int
+	// 	if one == user.ID {
+	// 		friendID = another
+	// 	} else {
+	// 		friendID = one
+	// 	}
+	// 	if _, ok := friendsMap[friendID]; !ok {
+	// 		friendsMap[friendID] = createdAt
+	// 	}
+	// }
+	// rows.Close()
 	friends := make([]Friend, 0, len(friendsMap))
 	for key, val := range friendsMap {
 		friends = append(friends, Friend{key, val})
@@ -730,10 +740,30 @@ func PostFriends(w http.ResponseWriter, r *http.Request) {
 
 	user := getCurrentUser(w, r)
 	anotherAccount := mux.Vars(r)["account_name"]
+
 	if !isFriendAccount(w, r, anotherAccount) {
 		another := getUserFromAccount(w, anotherAccount)
-		_, err := db.Exec(`INSERT INTO relations (one, another) VALUES (?,?), (?,?)`, user.ID, another.ID, another.ID, user.ID)
-		checkErr(err)
+
+		strJSON, err := redis.String(conn.Do("get", user.ID))
+		if err != nil {
+			checkErr(err)
+		}
+
+		byteJSON := []byte(strJSON)
+		friendsMap := make(map[string]time.Time)
+		err = json.Unmarshal(byteJSON, &friendsMap)
+
+		strAnotID := strconv.Itoa(another.ID)
+		friendsMap[strAnotID] = time.Now()
+
+		stringfyJSON, err := json.Marshal(friendsMap)
+		if err != nil {
+			checkErr(err)
+		}
+		conn.Do("SET", user.ID, string(stringfyJSON))
+
+		// _, err := db.Exec(`INSERT INTO relations (one, another) VALUES (?,?), (?,?)`, user.ID, another.ID, another.ID, user.ID)
+		// checkErr(err)
 		http.Redirect(w, r, "/friends", http.StatusSeeOther)
 	}
 }
@@ -783,11 +813,11 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 	conn.Flush()
 
 	for id0, arr := range redisFriendsMap {
-		json, err := json.Marshal(arr)
+		strJSON, err := json.Marshal(arr)
 		if err != nil {
 			checkErr(err)
 		}
-		conn.Do("SET", id0, string(json))
+		conn.Do("SET", id0, string(strJSON))
 	}
 
 }
