@@ -697,7 +697,8 @@ func GetFriends(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	arr, err := redis.Values(conn.Do("HGETALL", user.ID))
-
+	fmt.Println(arr)
+	fmt.Println(user.ID)
 	index := 0
 	var friendID int
 	var t time.Time
