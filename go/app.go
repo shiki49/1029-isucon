@@ -719,6 +719,8 @@ func GetFriends(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	fmt.Println(friendsMap)
+
 	friends := make([]Friend, 0, len(friendsMap))
 	for key, val := range friendsMap {
 		friends = append(friends, Friend{key, val})
