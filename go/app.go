@@ -893,7 +893,7 @@ func main() {
 	r := mux.NewRouter()
 
 	//attatchProfiler(r)
-	r.PathPrefix("/debug/").Handler(http.DefaultServeMux)
+	// r.PathPrefix("/debug/").Handler(http.DefaultServeMux)
 
 	l := r.Path("/login").Subrouter()
 	l.Methods("GET").HandlerFunc(myHandler(GetLogin))
