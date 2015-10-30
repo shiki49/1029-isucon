@@ -697,8 +697,7 @@ func GetFriends(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	arr, err := redis.Values(conn.Do("HGETALL", user.ID))
-	fmt.Println(arr)
-	fmt.Println(user.ID)
+
 	index := 0
 	var friendID int
 	var t time.Time
@@ -711,16 +710,14 @@ func GetFriends(w http.ResponseWriter, r *http.Request) {
 			strFriendID, _ := redis.String(v, err)
 			friendID, _ = strconv.Atoi(strFriendID)
 		} else {
-			fmt.Println(v)
 			strTime, _ := redis.String(v, err)
-			fmt.Println(strTime)
 			t, _ = time.Parse("2006-01-02 15:04:05 -0700 MST", strTime)
 
 			friendsMap[friendID] = t
 		}
-	}
 
-	fmt.Println(friendsMap)
+		index++
+	}
 
 	friends := make([]Friend, 0, len(friendsMap))
 	for key, val := range friendsMap {
