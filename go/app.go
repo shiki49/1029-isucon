@@ -32,7 +32,7 @@ var (
 	db *sql.DB
 	// store *redistore.RediStore
 	store *sessions.CookieStore
-	conn  redis.Conn
+	pool  *redis.Pool
 )
 
 type User struct {
@@ -172,6 +172,9 @@ func getUserFromAccount(w http.ResponseWriter, name string) *User {
 func isFriend(w http.ResponseWriter, r *http.Request, anotherID int) bool {
 	session := getSession(w, r)
 	id := session.Values["user_id"]
+
+	conn := pool.Get()
+	defer conn.Close()
 
 	strJSON, err := redis.String(conn.Do("GET", id))
 	if err != nil {
@@ -694,6 +697,9 @@ func GetFriends(w http.ResponseWriter, r *http.Request) {
 
 	user := getCurrentUser(w, r)
 
+	conn := pool.Get()
+	defer conn.Close()
+
 	strJSON, err := redis.String(conn.Do("get", user.ID))
 	if err != nil {
 		checkErr(err)
@@ -723,6 +729,9 @@ func PostFriends(w http.ResponseWriter, r *http.Request) {
 
 	user := getCurrentUser(w, r)
 	anotherAccount := mux.Vars(r)["account_name"]
+
+	conn := pool.Get()
+	defer conn.Close()
 
 	if !isFriendAccount(w, r, anotherAccount) {
 		another := getUserFromAccount(w, anotherAccount)
@@ -809,6 +818,9 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 		redisFriendsMap[id1][id0] = t
 	}
 
+	conn := pool.Get()
+	defer conn.Close()
+
 	conn.Flush()
 
 	for id0, arr := range redisFriendsMap {
@@ -877,11 +889,12 @@ func main() {
 	store = sessions.NewCookieStore([]byte(ssecret))
 
 	//redis
-	conn, err = redis.Dial("tcp", ":6379")
-	if err != nil {
-		checkErr(err)
-	}
-	defer conn.Close()
+	pool = newPool()
+	// conn, err = redis.Dial("tcp", ":6379")
+	// if err != nil {
+	// 	checkErr(err)
+	// }
+	// defer conn.Close()
 
 	//use redis store
 	// store, err = redistore.NewRediStore(10, "tcp", host+":6379", "", []byte(ssecret))
@@ -950,9 +963,17 @@ func checkErr(err error) {
 	}
 }
 
-func attatchProfiler(router *mux.Router) {
-	// router.HandleFunc("/debug/pprof/", pprof.Index)
-	// router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	// router.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	// router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+func newPool() *redis.Pool {
+	return &redis.Pool{
+		MaxIdle:   80,
+		MaxActive: 12000, // max number of connections
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", ":6379")
+			if err != nil {
+				panic(err.Error())
+			}
+			return c, err
+		},
+	}
+
 }
