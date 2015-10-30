@@ -890,23 +890,8 @@ func main() {
 
 	//redis
 	pool = newPool()
-	// conn, err = redis.Dial("tcp", ":6379")
-	// if err != nil {
-	// 	checkErr(err)
-	// }
-	// defer conn.Close()
-
-	//use redis store
-	// store, err = redistore.NewRediStore(10, "tcp", host+":6379", "", []byte(ssecret))
-	// if err != nil {
-	// 	log.Fatalf("Failed to connect to redis")
-	// }
-	// defer store.Close()
 
 	r := mux.NewRouter()
-
-	//attatchProfiler(r)
-	// r.PathPrefix("/debug/").Handler(http.DefaultServeMux)
 
 	l := r.Path("/login").Subrouter()
 	l.Methods("GET").HandlerFunc(myHandler(GetLogin))
