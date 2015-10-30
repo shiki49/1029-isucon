@@ -824,7 +824,7 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(v)
 			strTime, _ := redis.String(v, err)
 			fmt.Println(strTime)
-			t, _ = time.Parse("2006-01-02 15:04:05", strTime)
+			t, _ = time.Parse("2006-01-02 15:04:05 -0700 MST", strTime)
 
 			friendsMap[friendID] = t
 
