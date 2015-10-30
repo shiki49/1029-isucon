@@ -821,20 +821,15 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 			strFriendID, _ := redis.String(v, err)
 			friendID, _ = strconv.Atoi(strFriendID)
 		} else {
+			fmt.Println(v)
 			strTime, _ := redis.String(v, err)
+			fmt.Println(strTime)
 			t, _ = time.Parse("2006-01-02 15:04:05", strTime)
 
 			friendsMap[friendID] = t
+
+			os.Exit(1)
 		}
-
-		// fmt.Println(rowFriendID)
-		// fmt.Println(strFriendID)
-		// fmt.Println(rowTime)
-		// fmt.Println(strTime)
-		// fmt.Println(friendID)
-		// fmt.Println(t)
-		// os.Exit(1)
-
 		index++
 	}
 
