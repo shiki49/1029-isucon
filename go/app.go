@@ -4,9 +4,9 @@ import (
 	//"bytes"
 	"database/sql"
 	"encoding/csv"
-	"encoding/json"
+	//"encoding/json"
 	"errors"
-	"fmt"
+	//"fmt"
 	"net"
 	// "github.com/boj/redistore"
 	"github.com/garyburd/redigo/redis"
@@ -696,20 +696,33 @@ func GetFriends(w http.ResponseWriter, r *http.Request) {
 	conn := pool.Get()
 	defer conn.Close()
 
-	strJSON, err := redis.String(conn.Do("get", user.ID))
-	if err != nil {
-		checkErr(err)
-	}
+	arr, err := redis.Values(conn.Do("HGETALL", user.ID))
 
-	byteJSON := []byte(strJSON)
-	var tmpFriendmap map[string]time.Time
 	friendsMap := make(map[int]time.Time)
-	err = json.Unmarshal(byteJSON, &tmpFriendmap)
+	for rowFriendID, rowTime := range arr {
+		strFriendID, _ := redis.String(rowFriendID, err)
+		strTime, _ := redis.String(rowTime, err)
 
-	for k, v := range tmpFriendmap {
-		id, _ := strconv.Atoi(k)
-		friendsMap[id] = v
+		t, _ := time.Parse("2006-01-02 15:04:05", strTime)
+		friendID, _ := strconv.Atoi(strFriendID)
+
+		friendsMap[friendID] = t
 	}
+
+	// strJSON, err := redis.String(conn.Do("get", user.ID))
+	// if err != nil {
+	// 	checkErr(err)
+	// }
+
+	// byteJSON := []byte(strJSON)
+	// var tmpFriendmap map[string]time.Time
+	// friendsMap := make(map[int]time.Time)
+	// err = json.Unmarshal(byteJSON, &tmpFriendmap)
+
+	// for k, v := range tmpFriendmap {
+	// 	id, _ := strconv.Atoi(k)
+	// 	friendsMap[id] = v
+	// }
 
 	friends := make([]Friend, 0, len(friendsMap))
 	for key, val := range friendsMap {
@@ -793,9 +806,6 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 			conn.Do("HSET", id0, id1, t)
 		}
 	}
-
-	arr, err := redis.Values(conn.Do("HGETALL", 3657))
-	fmt.Println(arr)
 
 }
 
