@@ -809,24 +809,36 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 
 	arr, err := redis.Values(conn.Do("HGETALL", 3657))
 
+	index := 0
+	var friendID int
+	var t time.Time
+
 	friendsMap := make(map[int]time.Time)
-	for rowFriendID, rowTime := range arr {
-		fmt.Println(rowFriendID)
-		strFriendID, _ := redis.String(rowFriendID, err)
-		strTime, _ := redis.String(rowTime, err)
+	for _, v := range arr {
+		m := index % 2
 
-		t, _ := time.Parse("2006-01-02 15:04:05", strTime)
-		friendID, _ := strconv.Atoi(strFriendID)
+		if m == 0 {
+			strFriendID, _ := redis.String(v, err)
+			friendID, _ = strconv.Atoi(strFriendID)
+		} else {
+			strTime, _ := redis.String(v, err)
+			t, _ = time.Parse("2006-01-02 15:04:05", strTime)
 
-		fmt.Println(strFriendID)
-		fmt.Println(rowTime)
-		fmt.Println(strTime)
-		fmt.Println(friendID)
-		fmt.Println(t)
-		os.Exit(1)
+			friendsMap[friendID] = t
+		}
 
-		friendsMap[friendID] = t
+		// fmt.Println(rowFriendID)
+		// fmt.Println(strFriendID)
+		// fmt.Println(rowTime)
+		// fmt.Println(strTime)
+		// fmt.Println(friendID)
+		// fmt.Println(t)
+		// os.Exit(1)
+
+		index++
 	}
+
+	fmt.Println(friendsMap)
 
 }
 
