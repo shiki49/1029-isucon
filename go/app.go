@@ -947,6 +947,7 @@ func main() {
 	go func(c chan os.Signal) {
 		sig := <-c
 		log.Printf("Caught signal %s: shutting down", sig)
+		pprof.StopCPUProfile()
 		ll.Close()
 		os.Exit(0)
 	}(sigc)
