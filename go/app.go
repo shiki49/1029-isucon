@@ -6,7 +6,7 @@ import (
 	"encoding/csv"
 	//"encoding/json"
 	"errors"
-	"fmt"
+	//"fmt"
 	"net"
 	// "github.com/boj/redistore"
 	"github.com/garyburd/redigo/redis"
