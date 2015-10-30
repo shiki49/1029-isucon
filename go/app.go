@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	// "github.com/boj/redistore"
 	"github.com/garyburd/redigo/redis"
@@ -849,6 +850,7 @@ func main() {
 	go func() {
 		for sig := range c {
 			log.Printf("captured %v, stopping profiler and exiting...", sig)
+			fmt.Println("stop server")
 			pprof.StopCPUProfile()
 			os.Exit(1)
 		}
