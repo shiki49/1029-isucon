@@ -6,7 +6,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"errors"
-	"github.com/boj/redistore"
+	// "github.com/boj/redistore"
 	"github.com/garyburd/redigo/redis"
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/context"
@@ -27,8 +27,9 @@ import (
 )
 
 var (
-	db    *sql.DB
-	store *redistore.RediStore
+	db *sql.DB
+	// store *redistore.RediStore
+	store *sessions.CookieStore
 	conn  redis.Conn
 )
 
@@ -871,7 +872,7 @@ func main() {
 	}
 	defer db.Close()
 
-	// store = sessions.NewCookieStore([]byte(ssecret))
+	store = sessions.NewCookieStore([]byte(ssecret))
 
 	//redis
 	conn, err = redis.Dial("tcp", ":6379")
@@ -881,11 +882,11 @@ func main() {
 	defer conn.Close()
 
 	//use redis store
-	store, err = redistore.NewRediStore(10, "tcp", host+":6379", "", []byte(ssecret))
-	if err != nil {
-		log.Fatalf("Failed to connect to redis")
-	}
-	defer store.Close()
+	// store, err = redistore.NewRediStore(10, "tcp", host+":6379", "", []byte(ssecret))
+	// if err != nil {
+	// 	log.Fatalf("Failed to connect to redis")
+	// }
+	// defer store.Close()
 
 	r := mux.NewRouter()
 
