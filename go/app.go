@@ -807,6 +807,21 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	arr, err := redis.Values(conn.Do("HGETALL", user.ID))
+
+	friendsMap := make(map[int]time.Time)
+	for rowFriendID, rowTime := range arr {
+		strFriendID, _ := redis.String(rowFriendID, err)
+		strTime, _ := redis.String(rowTime, err)
+
+		t, _ := time.Parse("2006-01-02 15:04:05", strTime)
+		friendID, _ := strconv.Atoi(strFriendID)
+
+		friendsMap[friendID] = t
+	}
+
+	fmt.Println(friendsMap)
+
 }
 
 func main() {
