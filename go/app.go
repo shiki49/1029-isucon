@@ -176,17 +176,12 @@ func isFriend(w http.ResponseWriter, r *http.Request, anotherID int) bool {
 	conn := pool.Get()
 	defer conn.Close()
 
-	strJSON, err := redis.String(conn.Do("GET", id))
+	_, err := redis.String(conn.Do("HGET", id, anotherID))
 	if err != nil {
-		checkErr(err)
+		return false
 	}
 
-	byteJSON := []byte(strJSON)
-	var friendmap map[string]time.Time
-	err = json.Unmarshal(byteJSON, &friendmap)
-	_, exist := friendmap[strconv.Itoa(anotherID)]
-
-	return exist
+	return true
 }
 
 func isFriendAccount(w http.ResponseWriter, r *http.Request, name string) bool {
@@ -736,41 +731,9 @@ func PostFriends(w http.ResponseWriter, r *http.Request) {
 	if !isFriendAccount(w, r, anotherAccount) {
 		another := getUserFromAccount(w, anotherAccount)
 
-		strJSON, err := redis.String(conn.Do("get", user.ID))
-		if err != nil {
-			checkErr(err)
-		}
-
-		byteJSON := []byte(strJSON)
-		friendsMap := make(map[string]time.Time)
-		err = json.Unmarshal(byteJSON, &friendsMap)
-
-		strAnotID := strconv.Itoa(another.ID)
-		friendsMap[strAnotID] = time.Now()
-
-		stringfyJSON, err := json.Marshal(friendsMap)
-		if err != nil {
-			checkErr(err)
-		}
-		conn.Do("SET", user.ID, string(stringfyJSON))
-
-		strJSON, err = redis.String(conn.Do("get", another.ID))
-		if err != nil {
-			checkErr(err)
-		}
-
-		byteJSON = []byte(strJSON)
-		friendsMap = make(map[string]time.Time)
-		err = json.Unmarshal(byteJSON, &friendsMap)
-
-		strUserID := strconv.Itoa(user.ID)
-		friendsMap[strUserID] = time.Now()
-
-		stringfyJSON, err = json.Marshal(friendsMap)
-		if err != nil {
-			checkErr(err)
-		}
-		conn.Do("SET", another.ID, string(stringfyJSON))
+		now := time.Now()
+		conn.Do("HSET", user.ID, another.ID, now)
+		conn.Do("HSET", another.ID, user.ID, now)
 
 		http.Redirect(w, r, "/friends", http.StatusSeeOther)
 	}
@@ -824,11 +787,9 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 	conn.Flush()
 
 	for id0, arr := range redisFriendsMap {
-		strJSON, err := json.Marshal(arr)
-		if err != nil {
-			checkErr(err)
+		for id1, t := range arr {
+			conn.Do("HSET", id0, id1, t)
 		}
-		conn.Do("SET", id0, string(strJSON))
 	}
 
 }
