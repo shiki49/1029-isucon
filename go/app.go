@@ -6,7 +6,7 @@ import (
 	"encoding/csv"
 	//"encoding/json"
 	"errors"
-	//"fmt"
+	"fmt"
 	"net"
 	// "github.com/boj/redistore"
 	"github.com/garyburd/redigo/redis"
@@ -807,7 +807,7 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	arr, err := redis.Values(conn.Do("HGETALL", user.ID))
+	arr, err := redis.Values(conn.Do("HGETALL", 3657))
 
 	friendsMap := make(map[int]time.Time)
 	for rowFriendID, rowTime := range arr {
