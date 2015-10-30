@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	// "github.com/boj/redistore"
 	"github.com/garyburd/redigo/redis"
@@ -737,6 +738,7 @@ func PostFriends(w http.ResponseWriter, r *http.Request) {
 
 		http.Redirect(w, r, "/friends", http.StatusSeeOther)
 	}
+
 }
 
 func GetInitialize(w http.ResponseWriter, r *http.Request) {
@@ -791,6 +793,9 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 			conn.Do("HSET", id0, id1, t)
 		}
 	}
+
+	arr, err := redis.Values(conn.Do("HGETALL", 3657))
+	fmt.Println(arr)
 
 }
 
