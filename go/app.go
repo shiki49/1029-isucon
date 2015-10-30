@@ -742,6 +742,24 @@ func PostFriends(w http.ResponseWriter, r *http.Request) {
 		}
 		conn.Do("SET", user.ID, string(stringfyJSON))
 
+		strJSON, err = redis.String(conn.Do("get", another.ID))
+		if err != nil {
+			checkErr(err)
+		}
+
+		byteJSON = []byte(strJSON)
+		friendsMap = make(map[string]time.Time)
+		err = json.Unmarshal(byteJSON, &friendsMap)
+
+		strUserID := strconv.Itoa(user.ID)
+		friendsMap[strUserID] = time.Now()
+
+		stringfyJSON, err = json.Marshal(friendsMap)
+		if err != nil {
+			checkErr(err)
+		}
+		conn.Do("SET", another.ID, string(stringfyJSON))
+
 		http.Redirect(w, r, "/friends", http.StatusSeeOther)
 	}
 }
@@ -863,7 +881,7 @@ func main() {
 	defer conn.Close()
 
 	//use redis store
-	store, err = redistore.NewRediStore(10, "tcp", host+":6379", "", []byte("isucon5q-secret"))
+	store, err = redistore.NewRediStore(10, "tcp", host+":6379", "", []byte(ssecret))
 	if err != nil {
 		log.Fatalf("Failed to connect to redis")
 	}
