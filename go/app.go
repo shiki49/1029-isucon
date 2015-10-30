@@ -784,7 +784,7 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 	conn := pool.Get()
 	defer conn.Close()
 
-	conn.Flush()
+	conn.Do("FLUSHALL")
 
 	for id0, arr := range redisFriendsMap {
 		for id1, t := range arr {
