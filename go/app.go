@@ -921,7 +921,7 @@ func main() {
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("../static")))
 
 	// log.Fatal(http.ListenAndServe(":8080", r))
-	s := "/dev/shm/app.sock"
+	s := "/home/isucon/app.sock"
 	os.Remove(s)
 	ll, err := net.Listen("unix", s)
 	if err != nil {
