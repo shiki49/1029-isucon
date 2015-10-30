@@ -827,8 +827,6 @@ func GetInitialize(w http.ResponseWriter, r *http.Request) {
 			t, _ = time.Parse("2006-01-02 15:04:05 -0700 MST", strTime)
 
 			friendsMap[friendID] = t
-
-			os.Exit(1)
 		}
 		index++
 	}
